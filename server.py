@@ -2,7 +2,7 @@ import socket
 import threading
 
 HOST = '192.168.0.235'
-PORT = 5050
+PORT = 6000
 HEADER = 255
 
 DISCONNECT_MESSAGE = '@QUIT'
@@ -12,12 +12,10 @@ server =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
 
 # List to store connected clients
-connectedClients = []
+connectedClients = {}
 
  
 def handleClient(conn, addr):
-    print(f'[NEW CONNECTION] {addr} connected')
-    conn.recv()
 
     connected = True
     while connected:
@@ -32,9 +30,15 @@ def handleClient(conn, addr):
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode()
 
-            print(f'[{addr}] {msg}')
-
-
+            if "Connect" in msg:
+                clientId = msg[8:]
+                #send interval time for alive message
+                conn.send("30".encode())
+                connectedClients[clientId] = conn
+            elif "List" == msg:
+                conn.send(connectedClients.encode())
+            
+            print(f'{msg}')
             connected = checkConnection(msg)
 
     conn.close()
@@ -46,16 +50,6 @@ def start():
         conn, addr = server.accept()
         thread = threading.Thread(target=handleClient, args=(conn, addr))
         thread.start()
-        conn.send('[ALIVE INTERVAL] 1 minute'.encode())
-        connectedClients.append(conn)
-
-        #number of connections
-        onlineClientsNum = len(connectedClients)
-
-        #IDs of online clients
-        # print(connectedClients)
-        # print(onlineClientsNum)
-
 
 
 
@@ -71,7 +65,7 @@ def getOnlineClients():
     onlineClientsNum = len(connectedClients)
 
     #IDs of online clients
-    print(connectedClients)
+    return connectedClients
 
 
 
