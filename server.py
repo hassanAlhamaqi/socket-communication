@@ -1,8 +1,9 @@
 import socket
 import threading
+import pickle
 
 HOST = '192.168.0.235'
-PORT = 6000
+PORT = 5003
 HEADER = 255
 
 DISCONNECT_MESSAGE = '@QUIT'
@@ -11,7 +12,7 @@ CHECK_ONLINE_MESSAGE = '@List'
 server =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
 
-# List to store connected clients
+# a dictionary of online clients including their ids as keys and address as value {id: (addr)}
 connectedClients = {}
 
  
@@ -30,19 +31,26 @@ def handleClient(conn, addr):
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode()
 
+            print(f'{msg}')
+
             if "Connect" in msg:
                 clientId = msg[8:]
                 #send interval time for alive message
                 conn.send("30".encode())
+                send("30", conn)
                 connectedClients[clientId] = conn
+               
             elif "List" == msg:
-                conn.send(connectedClients.encode())
+                listMessage(conn)
+
+            elif '[MESSAGE]' in msg:
+                forwardMessage(clientId, msg)
             
-            print(f'{msg}')
-            connected = checkConnection(msg)
+            elif "Quit" == msg:
+                connected = quitMessage(msg, clientId)
 
     conn.close()
-    connectedClients.remove(conn)
+    
 
 def start():
     server.listen()
@@ -53,19 +61,36 @@ def start():
 
 
 
-def checkConnection(msg):
-    if msg == DISCONNECT_MESSAGE:
-        return False
-    else:
-        return True
+def quitMessage(msg, clientId):
+    connectedClients.pop(clientId)
+    return False
+
     
-def getOnlineClients():
+def listMessage(conn):
+    data = pickle.dumps(list(connectedClients.keys()))
+    conn.send(data)
 
-    #number of online clients
-    onlineClientsNum = len(connectedClients)
 
-    #IDs of online clients
-    return connectedClients
+def forwardMessage(sourceId, msg):
+    parts = msg.split(' ', 2)
+    destinationId = parts[1][1:-1]
+    writtenMessage = parts[2]
+
+    connectedClients[sourceId].send(writtenMessage.encode())
+
+
+
+def updateClientsList():
+    pass
+
+def send(msg, conn):
+    msg = msg.encode()
+    msgLength = len(msg)
+    msgLength = str(msgLength).encode()
+    msgLength += b' ' * (HEADER - len(msgLength))
+
+    conn.send(msgLength)
+    conn.send(msg)
 
 
 

@@ -1,9 +1,10 @@
 import socket
 import time
+import pickle
 from threading import Thread
 
 HOST = '192.168.0.235'
-PORT = 6000
+PORT = 5003
 HEADER = 255
 CLIENT_ID_LENGTH = 8
 DISCONNECT_MESSAGE = '@QUIT'
@@ -19,9 +20,7 @@ def main():
 
     #alive message
     intervalTime = client.recv(HEADER).decode()
-    # print(intervalTime)
-    # while True:
-    #     aliveMessage(clientId ,client, intervalTime)
+
 
 
     # Create a separate thread for the sleep operation
@@ -30,20 +29,23 @@ def main():
     sleepThread.start()
 
     while True:
+        
         choice = input("""choose or write an action
                     1. @Quit
                     2. @List
                     3  Message to other client
             """)
-        if (choice == 1 or choice == '@Quit'):
+        if (choice == '1' or choice == '@Quit'):
             send('Quit' ,client)
+            client.close()
             break
 
-        elif (choice == 2 or choice == '@List'):
-           listMessage()
+        elif (choice == '2' or choice == '@List'):
+           listMessage(client)
+           
 
-        elif (choice == 3 or choice == "Message to other client"):
-            clientToClientMessage()
+        elif (choice == '3' or choice == "Message to other client"):
+            clientToClientMessage(client)
 
 
 """
@@ -81,11 +83,22 @@ def connectMessage(client):
 
 def listMessage(client):
         send('List' ,client)
-        onlineList = client.recv(HEADER).decode()
+        onlineList = client.recv(HEADER)
+        onlinelist = pickle.loads(onlineList)  # Deserialize the data using pickle
 
-def clientToClientMessage():
+        onlineUsersNum = len(onlinelist)
+
+        # print(f'Their are {len(data)} online clients:')
+        print(f'Their are {onlineUsersNum} online clients:' if onlineUsersNum > 1 else f'Their is {onlineUsersNum} online client:')
+        for clientId in onlinelist:
+            print(f'clientId: {clientId}')
+
+
+
+def clientToClientMessage(client):
         otherClientId = input('To send a message to an online client, enter his id:')
-        message = input('Enter the message:')   
+        msg = input('Enter the message:')
+        send(f'[MESSAGE] ({otherClientId}) {msg}', client)
 
 
 def aliveMessage(clientId, client, intervalTime):
