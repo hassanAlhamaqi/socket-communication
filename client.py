@@ -2,9 +2,10 @@ import socket
 import time
 import pickle
 from threading import Thread
+import os
 
 HOST = '192.168.0.235'
-PORT = 5003
+PORT = 5012
 HEADER = 255
 CLIENT_ID_LENGTH = 8
 DISCONNECT_MESSAGE = '@QUIT'
@@ -20,32 +21,38 @@ def main():
 
     #alive message
     intervalTime = client.recv(HEADER).decode()
-
-
+    
 
     # Create a separate thread for the sleep operation
     sleepThread = Thread(target=aliveMessage, args=(clientId, client, intervalTime))
     sleepThread.daemon = True  # This will allow the program to exit if the main thread exits
     sleepThread.start()
 
-    while True:
+    # Create a separate thread for the receiving messages
+    messageThread = Thread(target=receiveClientMsg, args=(client,))
+    messageThread.daemon = True  # This will allow the program to exit if the main thread exits
+    messageThread.start()
+
+    connected = True
+    while connected:
         
-        choice = input("""choose or write an action
-                    1. @Quit
-                    2. @List
-                    3  Message to other client
-            """)
-        if (choice == '1' or choice == '@Quit'):
+        choice = input("Write the command: ")
+        
+        if (choice == '@Quit'):
             send('Quit' ,client)
+            connected = False
+            os._exit(0)
             client.close()
-            break
 
-        elif (choice == '2' or choice == '@List'):
-           listMessage(client)
+        elif (choice == '@List'):
+           send('List' ,client)
+           time.sleep(2)
+        #    listMessage(client)
            
-
-        elif (choice == '3' or choice == "Message to other client"):
+        elif (choice == "Message to other client"):
             clientToClientMessage(client)
+        
+
 
 
 """
@@ -101,10 +108,24 @@ def clientToClientMessage(client):
         send(f'[MESSAGE] ({otherClientId}) {msg}', client)
 
 
+def receiveClientMsg(client):
+        while True:
+            try:
+                msg = client.recv(1024).decode()
+                if msg:
+                    print(f'\n{msg}') 
+            except Exception as e:
+                listMessage(client)
+            break
+
+
+
 def aliveMessage(clientId, client, intervalTime):
     while True:
         time.sleep(int(intervalTime))
         send(f'alive {clientId}', client)
 
 
-main()
+
+if __name__ == "__main__":
+    main()

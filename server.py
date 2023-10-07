@@ -3,7 +3,7 @@ import threading
 import pickle
 
 HOST = '192.168.0.235'
-PORT = 5003
+PORT = 5012
 HEADER = 255
 
 DISCONNECT_MESSAGE = '@QUIT'
@@ -12,7 +12,7 @@ CHECK_ONLINE_MESSAGE = '@List'
 server =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
 
-# a dictionary of online clients including their ids as keys and address as value {id: (addr)}
+# a dictionary of online clients including their ids as keys and socket as value {id: (conn)}
 connectedClients = {}
 
  
@@ -34,10 +34,11 @@ def handleClient(conn, addr):
             print(f'{msg}')
 
             if "Connect" in msg:
-                clientId = msg[8:]
+                clientId = msg[8:].rstrip('\x00')
                 #send interval time for alive message
                 conn.send("30".encode())
-                send("30", conn)
+    
+                # connectedClients[clientId] = conn
                 connectedClients[clientId] = conn
                
             elif "List" == msg:
@@ -61,7 +62,7 @@ def start():
 
 
 
-def quitMessage(msg, clientId):
+def quitMessage(clientId):
     connectedClients.pop(clientId)
     return False
 
@@ -76,22 +77,13 @@ def forwardMessage(sourceId, msg):
     destinationId = parts[1][1:-1]
     writtenMessage = parts[2]
 
-    connectedClients[sourceId].send(writtenMessage.encode())
+    connectedClients[destinationId].send(parts[2].encode())
+    
 
 
 
 def updateClientsList():
     pass
-
-def send(msg, conn):
-    msg = msg.encode()
-    msgLength = len(msg)
-    msgLength = str(msgLength).encode()
-    msgLength += b' ' * (HEADER - len(msgLength))
-
-    conn.send(msgLength)
-    conn.send(msg)
-
 
 
 
