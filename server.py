@@ -3,7 +3,7 @@ import threading
 import pickle
 
 HOST = '192.168.0.235'
-PORT = 5012
+PORT = 5013
 HEADER = 255
 
 DISCONNECT_MESSAGE = '@QUIT'
@@ -46,9 +46,9 @@ def handleClient(conn, addr):
 
             elif '[MESSAGE]' in msg:
                 forwardMessage(clientId, msg)
-            
+
             elif "Quit" == msg:
-                connected = quitMessage(msg, clientId)
+                connected = quitMessage(clientId)
 
     conn.close()
     
@@ -75,11 +75,12 @@ def listMessage(conn):
 def forwardMessage(sourceId, msg):
     parts = msg.split(' ', 2)
     destinationId = parts[1][1:-1]
-    writtenMessage = parts[2]
 
-    connectedClients[destinationId].send(parts[2].encode())
-    
+    writtenMessage = " ".join(parts[2:])
+    writtenMessage = writtenMessage[0:]
 
+    if(destinationId in connectedClients):
+        connectedClients[destinationId].send(f'Message from user {sourceId} : {writtenMessage}'.encode())
 
 
 def updateClientsList():
