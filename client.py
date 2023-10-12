@@ -43,7 +43,7 @@ def receiveClientMsg(client):
                 
             except Exception as e:
                 listMessage(client) #needs refactoring
-            break
+            
 
 
 def sendMsgToServer(client):
@@ -123,7 +123,7 @@ def aliveMessage(clientId, client, intervalTime):
             send(f'alive {clientId}', client)
         except Exception as e:
                 print(e)
-        break
+        
 
 
 
