@@ -10,7 +10,7 @@ HEADER = 255
 CLIENT_ID_LENGTH = 8
 DISCONNECT_MESSAGE = '@QUIT'
 
-l = Lock() # creating the lock object
+
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,19 +39,21 @@ def receiveClientMsg(client):
             try:
                 msg = client.recv(1024).decode()
                 if msg:
-                    print(f'\n{msg}') 
+                    print(f'{msg}') 
                 
             except Exception as e:
-                listMessage(client) #needs refactoring
+                break
             
 
 
 def sendMsgToServer(client):
     global connected
 
+    #This is the pattern in regex for this Syntax: (otherclientid) message-statement
     pattern = r'\(([^)]+)\)'
+
     while connected:
-        
+
         command = input("Write the command: ")
         
         if (command == '@Quit'):
@@ -62,9 +64,11 @@ def sendMsgToServer(client):
 
         elif (command == '@List'):
            send('List' ,client)
+           time.sleep(2)
            
         elif (re.match(pattern, command)):
             clientToClientMessage(client, command)
+            time.sleep(2)
 
         else:
             print("Unknown command")
@@ -73,34 +77,28 @@ def sendMsgToServer(client):
 
 
 def connectMessage(client):
-    clientId = str(input("Enter your ID: "))
+
+    #In case the user wrote a string as his id, ask him to write his id again as an 8 bytes integer
+    while True:
+        clientId = input("Enter your ID: ")
+        if(clientId.isnumeric()):
+             break
+
+    #convert it to string in order to performe the padding 
+    clientId = str(clientId)
 
     #if some client has name less than 8 bytes then
     #perform padding to keep it of 8 Bytes
-
     if len(clientId.encode()) <= 8:
         clientId = clientId.ljust(CLIENT_ID_LENGTH, '\0')
     elif len(clientId.encode()) > 8:
         clientId = str(input("Enter your ID: "))
 
+         
+
     #connect message
     send(f'Connect {clientId}', client)
     return clientId
-
-
-
-def listMessage(client):
-        send('List' ,client)
-        onlineList = client.recv(HEADER)
-        onlinelist = pickle.loads(onlineList)  # Deserialize the data using pickle
-
-        onlineUsersNum = len(onlinelist)
-
-        # print(f'Their are {len(data)} online clients:')
-        print(f'Their are {onlineUsersNum} online clients:' if onlineUsersNum > 1 else f'Their is {onlineUsersNum} online client:')
-        for clientId in onlinelist:
-            print(f'clientId: {clientId}')
-
 
 
 def clientToClientMessage(client, command):
@@ -122,9 +120,7 @@ def aliveMessage(clientId, client, intervalTime):
             time.sleep(int(intervalTime))
             send(f'alive {clientId}', client)
         except Exception as e:
-                print(e)
-        
-
+            break
 
 
 #send the client id to the server
