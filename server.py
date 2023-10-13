@@ -75,7 +75,7 @@ def quitMessage(clientId):
 
     
 def listMessage(conn): 
-    conn.send(f'The number of online clients is: {len(connectedClients)}\n'.encode())
+    conn.send(f'\nThe number of online clients is: {len(connectedClients)}\n'.encode())
     for id in connectedClients:
         conn.send(f'----Client Id: {id}\n'.encode())
     
