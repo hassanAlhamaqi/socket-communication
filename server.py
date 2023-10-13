@@ -67,10 +67,11 @@ def quitMessage(clientId):
     return False
 
     
-def listMessage(conn):
-    data = pickle.dumps(list(connectedClients.keys()))
-    conn.send(data)
-
+def listMessage(conn): 
+    conn.send(f'The number of online clients is: {len(connectedClients)}\n'.encode())
+    for id in connectedClients:
+        conn.send(f'----Client Id: {id}'.encode())
+    
 
 def forwardMessage(sourceId, msg):
     parts = msg.split(' ', 2)
