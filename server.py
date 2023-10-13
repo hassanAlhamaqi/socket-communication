@@ -40,6 +40,9 @@ def handleClient(conn, addr):
     
                 # connectedClients[clientId] = conn
                 connectedClients[clientId] = conn
+
+                #update the users about the change in the list
+                updateClientsList(clientId)
                
             elif "List" == msg:
                 listMessage(conn)
@@ -64,13 +67,17 @@ def start():
 
 def quitMessage(clientId):
     connectedClients.pop(clientId)
+
+    #update the users about the change in the list
+    updateClientsList(clientId)
+
     return False
 
     
 def listMessage(conn): 
     conn.send(f'The number of online clients is: {len(connectedClients)}\n'.encode())
     for id in connectedClients:
-        conn.send(f'----Client Id: {id}'.encode())
+        conn.send(f'----Client Id: {id}\n'.encode())
     
 
 def forwardMessage(sourceId, msg):
@@ -82,10 +89,16 @@ def forwardMessage(sourceId, msg):
 
     if(destinationId in connectedClients):
         connectedClients[destinationId].send(f'Message from user {sourceId} : {writtenMessage}'.encode())
+    else:
+        connectedClients[sourceId].send(f'User {destinationId} is Offline'.encode())
 
 
-def updateClientsList():
-    pass
+
+def updateClientsList(clientId):
+    #send the updated list to everyone except the new user
+    for id,conn in connectedClients.items():
+        if(id != clientId):
+            listMessage(conn)
 
 
 

@@ -10,7 +10,7 @@ HEADER = 255
 CLIENT_ID_LENGTH = 8
 DISCONNECT_MESSAGE = '@QUIT'
 
-l = Lock() # creating the lock object
+
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,7 +42,7 @@ def receiveClientMsg(client):
                     print(f'{msg}') 
                 
             except Exception as e:
-                print(e)
+                break
             
 
 
@@ -120,9 +120,7 @@ def aliveMessage(clientId, client, intervalTime):
             time.sleep(int(intervalTime))
             send(f'alive {clientId}', client)
         except Exception as e:
-                break
-        
-
+            break
 
 
 #send the client id to the server
