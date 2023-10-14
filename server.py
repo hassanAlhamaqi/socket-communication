@@ -2,7 +2,7 @@ import socket
 import threading
 import pickle
 
-HOST = '192.168.0.235'
+HOST = '192.168.5.73'
 PORT = 5018
 HEADER = 255
 DISCONNECT_MESSAGE = '@QUIT'
@@ -86,7 +86,7 @@ def quitMessage(clientId):
 
     
 def listMessage(conn): 
-    conn.send(f'\nThe number of online clients is: {len(connectedClients)}\n'.encode())
+    conn.send(f'The number of online clients is: {len(connectedClients)}\n'.encode())
     for id in connectedClients:
         conn.send(f'----Client Id: {id}\n'.encode())
     
