@@ -2,7 +2,7 @@ import socket
 import threading
 import pickle
 
-HOST = '192.168.0.235'
+HOST = '192.168.5.73'
 PORT = 5013
 HEADER = 255
 
@@ -14,8 +14,16 @@ server.bind((HOST, PORT))
 
 # a dictionary of online clients including their ids as keys and socket as value {id: (conn)}
 connectedClients = {}
+lock = threading.Lock()
 
- 
+def isDuplicate(conn, clientId):
+    if clientId in connectedClients.keys():
+        print(f"id {clientId} exists")
+        conn.send("fail".encode())
+        return True
+    conn.send("success".encode())
+    return False
+
 def handleClient(conn, addr):
 
     connected = True
@@ -35,14 +43,14 @@ def handleClient(conn, addr):
 
             if "Connect" in msg:
                 clientId = msg[8:].rstrip('\x00')
-                #send interval time for alive message
-                conn.send("30".encode())
-    
-                # connectedClients[clientId] = conn
-                connectedClients[clientId] = conn
-
-                #update the users about the change in the list
-                updateClientsList(clientId)
+                lock.acquire()
+                if not isDuplicate(conn, clientId):
+                    conn.send("30".encode())
+                    # connectedClients[clientId] = conn
+                    connectedClients[clientId] = conn
+                    #update the users about the change in the list
+                    updateClientsList(clientId)
+                lock.release()
                
             elif "List" == msg:
                 listMessage(conn)
@@ -52,7 +60,7 @@ def handleClient(conn, addr):
 
             elif "Quit" == msg:
                 connected = quitMessage(clientId)
-
+                
     conn.close()
     
 
@@ -66,10 +74,11 @@ def start():
 
 
 def quitMessage(clientId):
+    lock.acquire()
     connectedClients.pop(clientId)
-
     #update the users about the change in the list
     updateClientsList(clientId)
+    lock.release()
 
     return False
 
@@ -86,11 +95,12 @@ def forwardMessage(sourceId, msg):
 
     writtenMessage = " ".join(parts[2:])
     writtenMessage = writtenMessage[0:]
-
+    lock.acquire()
     if(destinationId in connectedClients):
         connectedClients[destinationId].send(f'Message from user {sourceId} : {writtenMessage}'.encode())
     else:
         connectedClients[sourceId].send(f'User {destinationId} is Offline'.encode())
+    lock.release()
 
 
 
