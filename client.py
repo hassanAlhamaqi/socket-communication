@@ -5,7 +5,7 @@ import pickle
 import re
 import os
 
-HOST = '192.168.0.235'
+HOST = '192.168.5.73'
 PORT = 5018
 HEADER = 255
 CLIENT_ID_LENGTH = 8

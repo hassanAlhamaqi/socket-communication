@@ -2,7 +2,7 @@ import socket
 import threading
 import pickle
 
-HOST = '192.168.0.235'
+HOST = '192.168.5.73'
 PORT = 5018
 HEADER = 255
 DISCONNECT_MESSAGE = '@QUIT'
@@ -97,14 +97,27 @@ def forwardMessage(sourceId, msg):
 
     writtenMessage = " ".join(parts[2:])
     writtenMessage = writtenMessage[0:]
+    message = writtenMessage.encode()
+    print(message)
+    print(len(message))
     lock.acquire()
     if(destinationId in connectedClients):
-        connectedClients[destinationId].send(f'Message from user {sourceId} : {writtenMessage}'.encode())
+        connectedClients[destinationId].send(f'Message from user {sourceId} :'.encode())
+        while message:
+            n = len(message)
+            if n//239 > 0:
+                n = 240
+            connectedClients[destinationId].send(message[:n])
+            message = message[n:]
+            
+           
     else:
         connectedClients[sourceId].send(f'User {destinationId} is Offline'.encode())
     lock.release()
 
+def threadMessage(sourceId, destinationId, message):
 
+    print("hmm")
 
 def updateClientsList(clientId):
     #send the updated list to everyone except the new user
