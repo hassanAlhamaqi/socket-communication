@@ -4,11 +4,12 @@ import time
 import pickle
 import re
 
-HOST = '192.168.0.235'
+HOST = '192.168.5.73'
 PORT = 5013
 HEADER = 255
 CLIENT_ID_LENGTH = 8
 DISCONNECT_MESSAGE = '@QUIT'
+CHECK_ONLINE_MESSAGE = '@LIST'
 
 
 
@@ -56,13 +57,13 @@ def sendMsgToServer(client):
 
         command = input("Write the command: ")
         
-        if (command == '@Quit'):
+        if (command.upper() == DISCONNECT_MESSAGE):
             send('Quit' ,client)
             connected = False
             client.close()
             # os._exit(0)
 
-        elif (command == '@List'):
+        elif (command.upper() == CHECK_ONLINE_MESSAGE):
            send('List' ,client)
            time.sleep(2)
            
@@ -80,25 +81,31 @@ def connectMessage(client):
 
     #In case the user wrote a string as his id, ask him to write his id again as an 8 bytes integer
     while True:
-        clientId = input("Enter your ID: ")
-        if(clientId.isnumeric()):
-             break
+        while True:
+            clientId = input("Enter your ID: ")
+            if(clientId.isnumeric()):
+                break
+            
+        #convert it to string in order to performe the padding 
+        clientId = str(clientId)
 
-    #convert it to string in order to performe the padding 
-    clientId = str(clientId)
+        #if some client has name less than 8 bytes then
+        #perform padding to keep it of 8 Bytes
+        if len(clientId.encode()) <= 8:
+            clientId = clientId.ljust(CLIENT_ID_LENGTH, '\0')
+        elif len(clientId.encode()) > 8:
+            clientId = str(input("Enter your ID: "))
+        
 
-    #if some client has name less than 8 bytes then
-    #perform padding to keep it of 8 Bytes
-    if len(clientId.encode()) <= 8:
-        clientId = clientId.ljust(CLIENT_ID_LENGTH, '\0')
-    elif len(clientId.encode()) > 8:
-        clientId = str(input("Enter your ID: "))
+            
 
-         
-
-    #connect message
-    send(f'Connect {clientId}', client)
-    return clientId
+        #connect message
+        send(f'Connect {clientId}', client)
+        msg = client.recv(1024).decode()
+        if msg == "success":
+            return clientId
+        else:
+            print("duplicate id, try again")
 
 
 def clientToClientMessage(client, command):
