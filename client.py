@@ -102,7 +102,7 @@ def connectMessage(client):
 
             #connect message
             send(f'Connect {clientId}', client)
-            msg = client.recv(1024).decode()
+            msg = client.recv(7).decode()
             print(msg)
             if msg == "success":
                 return clientId
