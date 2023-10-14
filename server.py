@@ -34,7 +34,12 @@ def handleClient(conn, addr):
             1. He will send the length of the message in bytes
             2. He will send the actual message
         """
-        msg_length = conn.recv(HEADER).decode()
+        try:
+            msg_length = conn.recv(HEADER).decode()
+        except Exception as e:
+            connected = quitMessage(clientId)
+            break
+        
         if msg_length:
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode()
